@@ -5,12 +5,13 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
-import "./ERC5679.sol";
+import "./AERC5679.sol";
 
-contract ERC5679Ext1155RefImpl is ERC5679Ext1155, ERC1155 {
+contract MintableAndBurnableERC1155 is ERC5679Ext1155, ERC1155 {
     event ErcRefImplDeploy(uint256 version, string name, string url);
-    constructor(uint256 _version) ERC1155("") {
-        emit ErcRefImplDeploy(_version, "ERC5679Ext1155RefImpl", "http://zzn.li/ercref");
+    uint256 constant version = 0x02;
+    constructor() ERC1155("") {
+        emit ErcRefImplDeploy(version, "MintableAndBurnableERC1155", "http://zzn.li/ercref");
     }
     function safeMint(
         address _to,

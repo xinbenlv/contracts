@@ -5,15 +5,15 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "./ERC5679.sol";
+import "./AERC5679.sol";
 
-contract ERC5679Ext721RefImpl is ERC5679Ext721, ERC721 {
-
+contract MintableAndBurnableERC721 is ERC5679Ext721, ERC721 {
     event ErcRefImplDeploy(uint256 version, string name, string url);
-    constructor(uint256 _version)
-        ERC721("ERC5679Ext721RefImpl", "ERC5679Ext721RefImpl")
+    uint256 constant version = 0x02;
+    constructor()
+        ERC721("MintableAndBurnableERC721", "MintableAndBurnableERC721")
     {
-        emit ErcRefImplDeploy(_version, "ERC5679Ext721RefImpl", "http://zzn.li/ercref");
+        emit ErcRefImplDeploy(version, "MintableAndBurnableERC721", "http://zzn.li/ercref");
     }
 
     function safeMint(
