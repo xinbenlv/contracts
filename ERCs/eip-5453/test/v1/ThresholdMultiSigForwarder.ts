@@ -1,7 +1,7 @@
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { computeEndorsement, ERC5453EndorsementType } from "../utils/utils";
+import { computeEndorsement, ERC5453EndorsementType } from "../../utils/utils";
 
 const ZERO = ethers.utils.arrayify(ethers.utils.hexZeroPad("0x0", 32));
 

@@ -2,7 +2,7 @@ import { loadFixture, mine } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { Wallet } from "ethers";
 import { ethers } from "hardhat";
-import { computeEndorsement, ERC5453EndorsementType } from "../utils/utils";
+import { computeEndorsement, ERC5453EndorsementType } from "../../utils/utils";
 
 describe("EndorsibleERC721", function () {
     async function deployFixture() {
