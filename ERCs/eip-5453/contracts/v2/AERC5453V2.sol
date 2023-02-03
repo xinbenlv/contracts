@@ -25,9 +25,12 @@ abstract contract AERC5453EndorsibleV2 is
         domainHash = getEIP712DomainHash(
             contractName,
             version,
-            block.chainid,
-            address(this)
+            1, //XXX block.chainid,
+            address(0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC) //XXX address(this)
         );
+        console.log("XXX sol log domainHash BEGIN --- ");
+        console.logBytes32(domainHash);
+        console.log("XXX sol log domainHash END --- ");
     }
 
     function getEIP712DomainHash(
@@ -78,9 +81,22 @@ abstract contract AERC5453EndorsibleV2 is
         bytes32 sigHash = getFunctionCallTransferFromTypedDataHash(
             functionCallTransferFrom
         );
+        
+        console.log("XXX sol log sigHash BEGIN --- ");
+        console.logBytes32(sigHash);
+        console.log("XXX sol log sigHash END --- ");
+
+        console.log("XXX sol log signature BEGIN --- ");
+        console.logBytes(signature);
+        console.log("XXX sol log signature END --- ");
 
         // The `recover` method comes from the codegen, and will be able to recover from this:
         address recoveredSignatureSigner = recover(sigHash, signature);
+
+        console.log("XXX sol log recoveredSignatureSigner BEGIN --- ");
+        console.logAddress(recoveredSignatureSigner);
+        console.log("XXX sol log recoveredSignatureSigner END --- ");
+
         return recoveredSignatureSigner;
     }
 

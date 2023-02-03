@@ -2,7 +2,9 @@ import { loadFixture, mine } from "@nomicfoundation/hardhat-network-helpers";
 import { ethers } from "hardhat";
 import { expect } from "chai";
 import Ajv from 'ajv';
-// const ethSigUtil = require('@metamask/eth-sig-util');
+import { FunctionCallTransferFromStruct } from "../../typechain-types/contracts/v2/EIP712Decoder";
+const ethSigUtil = require("@metamask/eth-sig-util");
+const { SignTypedDataVersion, TypedDataUtils, recoverTypedSignature } = require("@metamask/eth-sig-util");
 const typedMessage = require("../../utils/endorsement-types");
 
 export const TYPED_MESSAGE_SCHEMA = {
@@ -102,48 +104,32 @@ describe("AERC5453V2", function () {
             ));
         });
 
-        it("Should signTypedData with Both @metamask/eth-sig-util and @hardhat/ethers", async function () {
-            const network = await ethers.getDefaultProvider().getNetwork();
-            console.log("Network name=", network.name);
-            console.log("Network chain id=", network.chainId);
-            let chainId = network.chainId;
-            const ethSigUtil = require("@metamask/eth-sig-util");
-            const { SignTypedDataVersion } = require("@metamask/eth-sig-util");
-
+        it("Should generate match sigs by signTypedData with Both @metamask/eth-sig-util and @hardhat/ethers", async function () {
             let { owner, mintSender, recipient, contract } = await loadFixture(deployFixture);
-            // Sign typed data
-            let domain = {
-                ...typedMessage.domain,
-                chainId,
-                verifyingContract: contract.address,
-            };
-            let types = {
-                TransferWithAuthorization: [
-                    { name: "from", type: "address" },
-                    { name: "to", type: "address" },
-                    { name: "value", type: "uint256" },
-                    { name: "validAfter", type: "uint256" },
-                    { name: "validBefore", type: "uint256" },
-                    { name: "nonce", type: "bytes32" }
-                ]
-            };
-            const amount = 1000000;
-            const validAfter = 0;
-            const validBefore = Math.floor(Date.now() / 1000) + 3600;
-            const nonce = ethers.utils.hexZeroPad(ethers.utils.arrayify(0x01), 32);
-            let message = {
-                from: owner.address,
-                to: recipient.address,
-                value: amount,
-                validAfter: validAfter,
-                validBefore: validBefore,
-                nonce: nonce
-            };
-            let newWallet = new ethers.Wallet(
+            let testWallet = new ethers.Wallet(
                 "0x4af1bceebf7f3634ec3cff8a2c38e51178d5d4ce585c52d6043e5e2cc3418bb0"
             );
             const privateKey = Buffer.from(
                 '4af1bceebf7f3634ec3cff8a2c38e51178d5d4ce585c52d6043e5e2cc3418bb0', "hex");
+            const network = await ethers.getDefaultProvider().getNetwork();
+
+            let chainId = network.chainId;
+
+            let domain = {
+                ...typedMessage.domain,
+                chainId: 1, // XXX chainId,
+                verifyingContract: "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC" // XXX contract.address,
+            };
+            let types = {
+                FunctionCallTransferFrom: typedMessage.types.FunctionCallTransferFrom
+            };
+            const tokenId = ethers.utils.hexZeroPad(ethers.utils.arrayify(0x01), 32);
+            let message = {
+                from: owner.address,
+                to: recipient.address,
+                tokenId,
+            };
+
             let version = SignTypedDataVersion.V4;
 
             const sigByMetaMask = ethSigUtil.signTypedData({
@@ -159,17 +145,87 @@ describe("AERC5453V2", function () {
                         ]
                     } ,
                     message,
-                    primaryType: "TransferWithAuthorization"
+                    primaryType: "FunctionCallTransferFrom"
                 },
                 version: version
             });
 
-            let sigByHardhat = await newWallet._signTypedData(
+
+            let hash = ethers.utils.hexlify(TypedDataUtils.eip712Hash({
+                domain,
+                types: { ...types,
+                    EIP712Domain: [
+                        { name: 'name', type: 'string' },
+                        { name: 'version', type: 'string' },
+                        { name: 'chainId', type: 'uint256' },
+                        { name: 'verifyingContract', type: 'address' },
+                    ]
+                } ,
+                message,
+                primaryType: "FunctionCallTransferFrom"
+            }, version));
+            console.log(`Hash =`, hash);
+            let functionCallTransferFromStruct:FunctionCallTransferFromStruct = {
+                from: owner.address,
+                to: recipient.address,
+                tokenId,
+            };
+            let packetHash = await contract.GET_FUNCTIONCALLTRANSFERFROM_PACKETHASH(
+                functionCallTransferFromStruct
+            );
+            let domainHash = await contract.getEIP712DomainHash(
+                "TestERC5453V2",
+                "v2",
+                1, //XXX block.chainid,
+                "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC", //XXX address(this)
+            );
+            console.log(`DomainHash TS =`, domainHash);
+            let sigHash = ethers.utils.keccak256(
+                ethers.utils.concat([
+                    ethers.utils.toUtf8Bytes('\x19\x01'),
+                    ethers.utils.arrayify(domainHash),
+                    ethers.utils.arrayify(packetHash)
+                ])
+            );
+            console.log(`sigHash TS =`, sigHash);
+
+            console.log(`PacketHash =`, packetHash);
+
+            let sigByHardhat = await testWallet._signTypedData(
                 domain,
                 types,
                 message
             );
+            console.log(`sigByMetaMask TS =`, sigByMetaMask);
+            let recoveredAddress = recoverTypedSignature({
+                signature: sigByMetaMask,
+                data: {
+                    domain,
+                    types: { ...types,
+                        EIP712Domain: [
+                            { name: 'name', type: 'string' },
+                            { name: 'version', type: 'string' },
+                            { name: 'chainId', type: 'uint256' },
+                            { name: 'verifyingContract', type: 'address' },
+                        ]
+                    } ,
+                    message,
+                    primaryType: "FunctionCallTransferFrom"
+                },
+                version: version
+            });
+            console.log(`Recovered address TS =`, recoveredAddress);
+            expect(ethers.utils.getAddress(recoveredAddress))
+                .to.equal(ethers.utils.getAddress(testWallet.address));
+
             expect(sigByMetaMask).to.equal(sigByHardhat);
+            expect(await contract.verifyEndorsement(
+                "transferFrom(address from,address to,tokenId)",
+                owner.address,
+                recipient.address,
+                tokenId,
+                sigByHardhat
+            )).to.equal(testWallet.address);
         });
 
     });
