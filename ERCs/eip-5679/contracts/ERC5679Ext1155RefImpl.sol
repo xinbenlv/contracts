@@ -34,7 +34,7 @@ contract ERC5679Ext1155RefImpl is ERC5679Ext1155, ERC1155 {
         address _from,
         uint256 _id,
         uint256 _amount,
-        bytes[] calldata // _data (unused)
+        bytes calldata // _data (unused)
     ) external override {
         _burn(_from, _id, _amount);
     }

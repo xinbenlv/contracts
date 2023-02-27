@@ -12,7 +12,7 @@ describe("Contract", function () {
         const { contract } = await deployByName(ethers, "ERC165Report", []);
         expect(await contract.get165("IERC5679Ext20")).to.equal("0xd0017968");
         expect(await contract.get165("IERC5679Ext721")).to.equal("0xcce39764");
-        expect(await contract.get165("IERC5679Ext1155")).to.equal("0xf4cedd5a");
+        expect(await contract.get165("IERC5679Ext1155")).to.equal("0x41809e3e");
     });
     it("Should match ERC5679Ext20RefImpl", async function () {
         const { contract } = await deployByName(ethers, "ERC5679Ext20RefImpl", [version]);
@@ -24,7 +24,7 @@ describe("Contract", function () {
     });
     it("Should match ERC5679Ext1155RefImpl", async function () {
         const { contract } = await deployByName(ethers, "ERC5679Ext1155RefImpl", [version]);
-        expect(await contract.supportsInterface("0xf4cedd5a")).to.be.true;
+        expect(await contract.supportsInterface("0x41809e3e")).to.be.true;
     });
 
   });
